@@ -431,7 +431,7 @@ class SettingsWindow(tk.Toplevel):
         tk.Label(self, text="Whisper Model:", **label_kw).pack(**pad, anchor="w")
         self._model_var = tk.StringVar(value=self._parent._cfg["model_name"])
         model_menu = tk.OptionMenu(self, self._model_var,
-                                   "tiny.en", "base.en", "small.en", "medium.en")
+                                   "tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium")
         model_menu.configure(bg="#1a1a2e", fg="white", activebackground=HANDLE_ACCENT,
                              font=(FONT_FAMILY, 11), relief="flat", highlightthickness=0)
         model_menu["menu"].configure(bg="#1a1a2e", fg="white", font=(FONT_FAMILY, 10))
@@ -526,13 +526,21 @@ class SettingsWindow(tk.Toplevel):
             return
 
         lang_str = self._lang_var.get().strip()
-        new_lang = None if lang_str.lower() == "auto" else (lang_str or None)
+        new_lang = "auto" if lang_str.lower() == "auto" else (lang_str or "en")
+
+        selected_model = self._model_var.get()
+        if (new_lang.lower() == "auto" or new_lang.lower() != "en") and selected_model.endswith(".en"):
+            msg = (f"The selected model '{selected_model}' is English-only and cannot auto-detect or transcribe "
+                   f"non-English speech.\n\nWould you like to switch to the multilingual '{selected_model[:-3]}' model?")
+            if messagebox.askyesno("Multilingual Model Required", msg):
+                selected_model = selected_model[:-3]
+                self._model_var.set(selected_model)
 
         old_width = self._parent._cfg.get("overlay_width", 860)
 
         self._parent._cfg.update({
             "device_index":   new_device,
-            "model_name":     self._model_var.get(),
+            "model_name":     selected_model,
             "language":       new_lang,
             "compute_device": self._compute_var.get(),
             "overlay_width":  new_width,
@@ -961,7 +969,7 @@ def main() -> None:
     if args.model is not None:
         cfg["model_name"] = args.model
     if args.language is not None:
-        cfg["language"] = None if args.language.lower() == "auto" else args.language
+        cfg["language"] = "auto" if args.language.lower() == "auto" else args.language
     if args.compute_device is not None:
         cfg["compute_device"] = args.compute_device
     if args.save_transcript is not None:

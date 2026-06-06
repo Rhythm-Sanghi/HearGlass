@@ -390,7 +390,12 @@ class TranscriptionEngine:
     ) -> None:
         self.device_index   = device_index
         self.model_name     = model_name
-        self.language       = language          # None → auto-detect
+        # Resolve 'auto' language option
+        if language is None or (isinstance(language, str) and language.lower() == "auto"):
+            self.language = None
+        else:
+            self.language = language
+        self._detected_language = None
         self.compute_device = compute_device
 
         self.on_transcript = on_transcript or (lambda t: log.info("TRANSCRIPT: %s", t))
@@ -587,9 +592,14 @@ class TranscriptionEngine:
         """Run faster-whisper on *audio* (int16) and return cleaned text."""
         audio_f32 = audio.astype(np.float32) / 32768.0
 
+        # Resolve the language to use. If in auto mode and a language has been locked, use it.
+        lang_to_use = self.language
+        if lang_to_use is None:
+            lang_to_use = self._detected_language
+
         segments, _info = self._model.transcribe(
             audio_f32,
-            language=self.language,             # None → auto-detect
+            language=lang_to_use,               # None → auto-detect
             beam_size=1,                        # 1 is greedy, much faster on CPU
             temperature=0.0,
             vad_filter=False,                   # Disabled (our custom Silero VAD already filtered it)
@@ -597,10 +607,29 @@ class TranscriptionEngine:
         )
 
         parts: list[str] = []
-        for seg in segments:
-            t = seg.text.strip()
-            if t and not _is_hallucination(t):
-                parts.append(t)
+        try:
+            for seg in segments:
+                t = seg.text.strip()
+                if t and not _is_hallucination(t):
+                    parts.append(t)
+        except Exception as exc:
+            log.error("Transcription segment processing failed: %s", exc)
+
+        # Lock the language on the first successful detection with valid transcript
+        if self.language is None and self._detected_language is None and _info is not None:
+            if parts and _info.language_probability > 0.6:
+                self._detected_language = _info.language
+                log.info(
+                    "Auto-detected language '%s' (prob=%.2f) with transcription. "
+                    "Locking language to '%s' for this session.",
+                    _info.language, _info.language_probability, _info.language
+                )
+            else:
+                log.debug(
+                    "Auto-detected language '%s' but probability %.2f is too low or transcript empty. "
+                    "Will re-detect on next segment.",
+                    _info.language, _info.language_probability
+                )
 
         return " ".join(parts)
 
