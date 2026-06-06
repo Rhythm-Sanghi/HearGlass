@@ -1,0 +1,131 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging
+bin/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+# We DO commit SubtitleOverlay.spec because it is custom-configured
+# *.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nosexy/
+.nosetests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, if you're executing a Python library, you should ignore it.
+#   For applications, keep it.
+#Lockfile should be in VC for apps
+#Pipfile.lock
+
+# poetry
+#   Similar to Pipfile.lock, poetry.lock should be in VC for apps
+#poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-plugins/
+__pdm-build/
+
+# celery beat keeping files
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath Parsed Files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# VS Code settings
+.vscode/
+
+# PyCharm / IntelliJ IDEA settings
+.idea/
+
+# Local / runtime files
+config.json
+app.log
+*.transcript.txt
+*.log.1
+*.log.2

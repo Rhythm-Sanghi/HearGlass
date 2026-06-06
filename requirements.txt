@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Real-Time Audio Subtitle Overlay — Dependencies
+# Python 3.10–3.13 supported
+# Install: pip install -r requirements.txt
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Audio I/O (Primary capture via soundcard; pyaudio retained for list_devices.py only)
+soundcard>=0.4.3
+# pyaudio==0.2.14  # Uncomment if you need list_devices.py (uses PyAudio indices)
+
+# Numpy for audio buffer math (3.13 compatible)
+numpy>=1.26.4
+
+# AI Transcription — faster-whisper (CTranslate2 backend, int8 quantization)
+# 1.2.1 uses av>=13 which has pre-built wheels for Python 3.13
+faster-whisper==1.2.1
+
+# Voice Activity Detection — Silero VAD (via torch.hub, downloaded on first run)
+# torchaudio is NOT required — faster-whisper's bundled VAD handles audio processing.
+torch>=2.6.0
+
+# PyWin32 for click-through window manipulation and global hotkeys (Windows only)
+pywin32>=307
+
+# System tray icon (optional — gracefully disabled if not installed)
+# Install with: pip install pystray Pillow
+pystray>=0.19.5
+Pillow>=10.0.0
+
+# pycaw — Python Core Audio Windows: controls the audio endpoint volume/mute
+# so WASAPI loopback captures real audio even when system speakers are muted.
+pycaw>=20181226

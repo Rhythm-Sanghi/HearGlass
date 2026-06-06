@@ -1,0 +1,59 @@
+name: Build Subtitle Overlay Executable
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger build when pushing tags like v1.0.0, v1.1.0 etc.
+  workflow_dispatch: # Allow manual trigger from GitHub Actions UI
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller SubtitleOverlay.spec --noconfirm
+
+      - name: Verify Executable Exists
+        run: |
+          if (Test-Path "dist/SubtitleOverlay.exe") {
+            Write-Output "Build Succeeded!"
+          } else {
+            Write-Error "Build Failed: SubtitleOverlay.exe not found."
+            exit 1
+          }
+
+      - name: Upload Build Artifact (For Action Runs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SubtitleOverlay-Win
+          path: dist/SubtitleOverlay.exe
+          if-no-files-found: error
+
+      - name: Release Executable
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/SubtitleOverlay.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
