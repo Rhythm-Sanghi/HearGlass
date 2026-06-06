@@ -127,7 +127,7 @@ The compiled binary will be placed inside `dist\SubtitleOverlay.exe`.
 | Issue | Cause | Solution |
 |---|---|---|
 | **Subtitles are delayed** | CPU bottleneck / large model | 1. Open Settings and switch to the `tiny.en` model.<br>2. If you have an NVIDIA GPU, set compute device to `cuda`. |
-| **No transcription / Red Dot** | Device mismatch or engine startup crash | Right-click the handle bar → **Settings** and verify your selected audio device index. Use `list_devices.py` to see indexes. |
+| **No transcription / Red Dot** | Device mismatch or engine startup crash | Right-click the handle bar → **Settings** and click to select your active audio device from the list of available devices. |
 | **Can't drag or click handle bar** | Entire window click-through | Fixed. The application now uses colorkey transparency (`TRANSPARENT_COLOR`) to make background transparent while keeping the handle bar clickable. |
 | **Sound is muted but capture fails** | Windows zeroes muted loopback streams | The app automatically uses a ghost-volume context manager (`pycaw`) to keep a 10% silent output stream alive. If it fails, unmute your speakers slightly. |
 | **Whisper hallucinating sentences** | Silence noise triggering model | The hallucination filter automatically filters out standard Whisper loops (e.g., *"Thank you for watching"*). Adjust VAD thresholds in `transcription_engine.py` if needed. |
