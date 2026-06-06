@@ -1,4 +1,4 @@
-# ▓▓▓ Real-Time Audio Subtitle Overlay ▓▓▓
+# Real-Time Audio Subtitle Overlay 
 
 A transparent, always-on-top Windows desktop overlay that captures system audio (speakers/headphones) in real-time and displays auto-generated subtitles. Powered by **faster-whisper** (OpenAI's Whisper engine optimized via CTranslate2 int8 quantization) and Silero VAD.
 
