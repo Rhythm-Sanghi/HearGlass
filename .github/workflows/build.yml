@@ -32,28 +32,28 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller SubtitleOverlay.spec --noconfirm
+          pyinstaller HearGlass.spec --noconfirm
 
       - name: Verify Executable Exists
         run: |
-          if (Test-Path "dist/SubtitleOverlay.exe") {
+          if (Test-Path "dist/HearGlass.exe") {
             Write-Output "Build Succeeded!"
           } else {
-            Write-Error "Build Failed: SubtitleOverlay.exe not found."
+            Write-Error "Build Failed: HearGlass.exe not found."
             exit 1
           }
 
       - name: Upload Build Artifact (For Action Runs)
         uses: actions/upload-artifact@v4
         with:
-          name: SubtitleOverlay-Win
-          path: dist/SubtitleOverlay.exe
+          name: HearGlass-Win
+          path: dist/HearGlass.exe
           if-no-files-found: error
 
       - name: Release Executable
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/SubtitleOverlay.exe
+          files: dist/HearGlass.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

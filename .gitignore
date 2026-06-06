@@ -29,7 +29,7 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-# We DO commit SubtitleOverlay.spec because it is custom-configured
+# We DO commit HearGlass.spec because it is custom-configured
 # *.spec
 
 # Unit test / coverage reports

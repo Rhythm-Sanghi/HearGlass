@@ -1,4 +1,4 @@
-# Real-Time Audio Subtitle Overlay 
+# HearGlass — Real-Time Audio Subtitle Overlay 
 
 A transparent, always-on-top Windows desktop overlay that captures system audio (speakers/headphones) in real-time and displays auto-generated subtitles. Powered by **faster-whisper** (OpenAI's Whisper engine optimized via CTranslate2 int8 quantization) and Silero VAD.
 
@@ -26,7 +26,7 @@ A transparent, always-on-top Windows desktop overlay that captures system audio 
 You can either run the app directly using a pre-compiled standalone executable or run it from source.
 
 ### Option A: Download Pre-compiled Binary (No Python Required)
-1. Once a release tag has been pushed, you can download the latest pre-compiled `SubtitleOverlay.exe` from the Releases tab on the GitHub repository.
+1. Once a release tag has been pushed, you can download the latest pre-compiled `HearGlass.exe` from the Releases tab on the GitHub repository.
 2. Double-click to launch the executable.
 *(Note: On the first run, it will automatically download the Whisper base model ~140 MB and Silero VAD model ~1 MB to your local cache. This may take a moment depending on your internet connection.)*
 
@@ -115,9 +115,9 @@ Right-click the **`▓▓▓ SUBTITLES ▓▓▓`** handle bar at the top of the
 If you modify the source code and want to compile a new `.exe`, run:
 ```bash
 pip install pyinstaller
-pyinstaller SubtitleOverlay.spec --noconfirm
+pyinstaller HearGlass.spec --noconfirm
 ```
-The compiled binary will be placed inside `dist\SubtitleOverlay.exe`.
+The compiled binary will be placed inside `dist\HearGlass.exe`.
 
 ---
 

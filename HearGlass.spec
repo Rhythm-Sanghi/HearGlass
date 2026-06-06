@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
-# SubtitleOverlay.spec — Single-file PyInstaller build
+# HearGlass.spec — Single-file PyInstaller build
 # =====================================================
-# Produces:  dist\SubtitleOverlay.exe  (one double-click, no folder needed)
+# Produces:  dist\HearGlass.exe  (one double-click, no folder needed)
 #
 # Build:
-#   .\venv\Scripts\pyinstaller SubtitleOverlay.spec --noconfirm
+#   .\venv\Scripts\pyinstaller HearGlass.spec --noconfirm
 #
 # Notes:
 #   • console=False  → no black terminal window appears on launch
@@ -127,7 +127,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='SubtitleOverlay',
+    name='HearGlass',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -288,7 +288,7 @@ class DragHandle(tk.Frame):
 
     HANDLE_HEIGHT = 28
 
-    def __init__(self, parent: "SubtitleOverlay", **kwargs) -> None:
+    def __init__(self, parent: "HearGlass", **kwargs) -> None:
         super().__init__(
             parent,
             bg=HANDLE_COLOR,
@@ -390,10 +390,10 @@ class DragHandle(tk.Frame):
 class SettingsWindow(tk.Toplevel):
     """Settings panel for device, model, language, compute device, and overlay width."""
 
-    def __init__(self, parent: "SubtitleOverlay") -> None:
+    def __init__(self, parent: "HearGlass") -> None:
         super().__init__(parent)
         self._parent = parent
-        self.title("Subtitle Overlay — Settings")
+        self.title("HearGlass — Settings")
         self.geometry("500x580")
         self.resizable(False, False)
         self.configure(bg="#0f0f23")
@@ -412,7 +412,7 @@ class SettingsWindow(tk.Toplevel):
         entry_kw = dict(bg="#1a1a2e", fg="white", insertbackground="white",
                         relief="flat", font=(FONT_FAMILY, 11), bd=8)
 
-        tk.Label(self, text="⚙  Subtitle Overlay Settings",
+        tk.Label(self, text="⚙  HearGlass Settings",
                  bg="#0f0f23", fg=HANDLE_ACCENT,
                  font=(FONT_FAMILY, 13, "bold")).pack(**pad, fill="x")
         tk.Frame(self, bg=HANDLE_ACCENT, height=1).pack(fill="x", padx=16)
@@ -559,7 +559,7 @@ class SettingsWindow(tk.Toplevel):
 # Main overlay window
 # ─────────────────────────────────────────────────────────────────────────────
 
-class SubtitleOverlay(tk.Tk):
+class HearGlass(tk.Tk):
     """
     Transparent, always-on-top subtitle overlay.
 
@@ -612,7 +612,7 @@ class SubtitleOverlay(tk.Tk):
     # ── Window setup ──────────────────────────────────────────────────────────
 
     def _build_window(self) -> None:
-        self.title("Subtitle Overlay")
+        self.title("HearGlass")
         self.overrideredirect(True)
         self.attributes("-topmost", True)
         self.configure(bg=TRANSPARENT_COLOR)
@@ -693,8 +693,8 @@ class SubtitleOverlay(tk.Tk):
                 pystray.MenuItem("Quit (Ctrl+Alt+Q)",
                                  lambda icon, item: self.after(0, self.quit_app)),
             )
-            self._tray = pystray.Icon("SubtitleOverlay", image,
-                                      "Subtitle Overlay", menu)
+            self._tray = pystray.Icon("HearGlass", image,
+                                      "HearGlass", menu)
             threading.Thread(target=self._tray.run, daemon=True,
                              name="TrayIcon").start()
             log.info("System tray icon started.")
@@ -985,7 +985,7 @@ def main() -> None:
     )
 
     print("\n" + "=" * 64)
-    print("  REAL-TIME SUBTITLE OVERLAY")
+    print("  HEARGLASS — REAL-TIME SUBTITLE OVERLAY")
     print("=" * 64)
     print(f"  Model    : {cfg['model_name']}")
     print(f"  Device   : {cfg['device_index'] if cfg['device_index'] is not None else 'auto'}")
@@ -996,7 +996,7 @@ def main() -> None:
     print("  Hotkeys  : Ctrl+Alt+C = copy  |  Ctrl+Alt+Q = quit")
     print("  Right-click the handle bar for Settings / Quit.\n")
 
-    app = SubtitleOverlay(cfg=cfg)
+    app = HearGlass(cfg=cfg)
     app.mainloop()
 
 
