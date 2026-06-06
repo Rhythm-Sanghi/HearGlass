@@ -89,7 +89,12 @@ except ImportError as e:
 # Settings persistence
 # ─────────────────────────────────────────────────────────────────────────────
 
-_CONFIG_PATH = pathlib.Path(__file__).parent / "config.json"
+if getattr(sys, "frozen", False):
+    _CONFIG_DIR = pathlib.Path(sys.executable).parent
+else:
+    _CONFIG_DIR = pathlib.Path(__file__).parent
+
+_CONFIG_PATH = _CONFIG_DIR / "config.json"
 
 _DEFAULT_CONFIG: dict = {
     "device_index":   None,
