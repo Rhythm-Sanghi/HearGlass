@@ -4,7 +4,7 @@ A transparent, always-on-top Windows desktop overlay that captures system audio 
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 * **Zero Virtual Cables Needed:** Captures raw speaker audio natively via WASAPI Loopback. Works out-of-the-box on Windows 10/11.
 * **Fully Click-Through:** Subtitle area is completely click-through, allowing you to use it on top of games, videos, meetings, and browsers without blocking mouse interaction.
@@ -21,14 +21,13 @@ A transparent, always-on-top Windows desktop overlay that captures system audio 
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
-You can either run the app directly using the pre-compiled standalone executable (recommended for laptop users) or run it from source.
+You can either run the app directly using a pre-compiled standalone executable or run it from source.
 
 ### Option A: Download Pre-compiled Binary (No Python Required)
-1. Head over to the **[Releases](../../releases)** page.
-2. Download the latest `SubtitleOverlay.exe`.
-3. Double-click to launch! 
+1. Once a release tag has been pushed, you can download the latest pre-compiled `SubtitleOverlay.exe` from the Releases tab on the GitHub repository.
+2. Double-click to launch the executable.
 *(Note: On the first run, it will automatically download the Whisper base model ~140 MB and Silero VAD model ~1 MB to your local cache. This may take a moment depending on your internet connection.)*
 
 ---
@@ -37,8 +36,8 @@ You can either run the app directly using the pre-compiled standalone executable
 
 #### 1. Clone & Set Up Environment
 ```bash
-git clone https://github.com/your-username/Audio_Text.git
-cd Audio_Text
+git clone https://github.com/Rhythm-Sanghi/HearGlass.git
+cd HearGlass
 python -m venv venv
 venv\Scripts\activate
 ```
@@ -62,13 +61,13 @@ python subtitle_overlay.py
 
 ---
 
-## ⚙️ Configuration & Customization
+## Configuration & Customization
 
 The overlay settings are automatically persisted inside `config.json` in the application directory. You can adjust:
 * **Audio Device Index:** Change the captured sound source (auto-detects default speaker by default).
 * **Whisper Model:**
   * `tiny.en` — Extremely fast, low CPU usage, good accuracy.
-  * `base.en` — Great balance of speed and accuracy (**default & recommended**).
+  * `base.en` — Great balance of speed and accuracy (default & recommended).
   * `small.en` / `medium.en` — High accuracy, but slower on low-end CPUs.
 * **Language:** Set custom language codes (e.g. `en`, `fr`, `de`, `es`) or `auto` for real-time translation/detection.
 * **Compute Device:** `cpu` (default) or `cuda` (if you have an NVIDIA GPU).
@@ -78,7 +77,7 @@ Right-click the **`▓▓▓ SUBTITLES ▓▓▓`** handle bar at the top of the
 
 ---
 
-## 🛠️ Architecture Pipeline
+## Architecture Pipeline
 
 ```
           System Audio (Speakers/Headphones)
@@ -104,14 +103,14 @@ Right-click the **`▓▓▓ SUBTITLES ▓▓▓`** handle bar at the top of the
 
 ---
 
-## ⌨️ Global Shortcuts
+## Global Shortcuts
 
 * **`Ctrl + Alt + C`**: Copy all accumulated transcript text from the current session directly to the clipboard.
 * **`Ctrl + Alt + Q`**: Stop the transcription engine, release audio hooks, and exit.
 
 ---
 
-## 📦 Packaging Your Own Executable
+## Packaging Your Own Executable
 
 If you modify the source code and want to compile a new `.exe`, run:
 ```bash
@@ -122,7 +121,7 @@ The compiled binary will be placed inside `dist\SubtitleOverlay.exe`.
 
 ---
 
-## ❓ Troubleshooting
+## Troubleshooting
 
 | Issue | Cause | Solution |
 |---|---|---|
