@@ -52,7 +52,11 @@ def _setup_logging() -> logging.Logger:
         "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%H:%M:%S"
     )
     # Rotating file handler — keeps at most 3 × 5 MB = 15 MB of history.
-    log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.log")
+    if getattr(sys, "frozen", False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    log_path = os.path.join(base_dir, "app.log")
     fh = logging.handlers.RotatingFileHandler(
         log_path, maxBytes=5 * 1024 * 1024, backupCount=2, encoding="utf-8"
     )
@@ -186,7 +190,7 @@ class EnergyVAD:
 
 class SileroVAD:
     """
-    Wrapper around the Silero VAD model via torch.hub.
+    Wrapper around the Silero VAD model via faster_whisper's ONNX runtime model.
     Used exclusively for *speech onset* detection (not silence detection)
     to get the best sensitivity while limiting inference cost.
     """
@@ -194,23 +198,14 @@ class SileroVAD:
     def __init__(self, threshold: float = SILERO_THRESHOLD) -> None:
         self.threshold = threshold
         self._model = None
-        self._torch = None
         self._load()
 
     def _load(self) -> None:
         try:
-            import torch
-            log.info("Loading Silero VAD model (first run downloads ~1 MB)...")
-            model, utils = torch.hub.load(
-                repo_or_dir="snakers4/silero-vad",
-                model="silero_vad",
-                force_reload=False,
-                trust_repo=True,
-                verbose=False,
-            )
-            self._model = model
-            self._torch = torch
-            log.info("Silero VAD loaded successfully.")
+            from faster_whisper.vad import get_vad_model
+            log.info("Loading ONNX Silero VAD model...")
+            self._model = get_vad_model()
+            log.info("ONNX Silero VAD loaded successfully.")
         except Exception as exc:
             log.warning("Silero VAD load failed (%s). Falling back to EnergyVAD.", exc)
             self._model = None
@@ -218,22 +213,23 @@ class SileroVAD:
     def is_speech(self, pcm_int16: np.ndarray) -> bool:
         if self._model is None:
             return False
-        # Silero VAD v4+ requires exactly 512 samples at 16 kHz.
+        # Silero VAD requires exactly 512 samples at 16 kHz.
         # We split the input array into chunks of 512 samples.
         chunk_size = 512
         for i in range(0, len(pcm_int16), chunk_size):
             chunk = pcm_int16[i:i+chunk_size]
             if len(chunk) < chunk_size:
-                # Pad with zeros if it's too short
                 pad = np.zeros(chunk_size - len(chunk), dtype=pcm_int16.dtype)
                 chunk = np.concatenate([chunk, pad])
             
             audio_float = chunk.astype(np.float32) / 32768.0
-            tensor = self._torch.from_numpy(audio_float)
-            with self._torch.no_grad():
-                confidence = self._model(tensor, SAMPLE_RATE).item()
-            if confidence >= self.threshold:
-                return True
+            try:
+                confidence_array = self._model(audio_float, num_samples=chunk_size)
+                confidence = float(confidence_array[0])
+                if confidence >= self.threshold:
+                    return True
+            except Exception as exc:
+                log.warning("VAD inference frame failed: %s", exc)
         return False
 
     @property

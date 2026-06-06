@@ -48,11 +48,8 @@ datas     += tmp[0]
 binaries  += tmp[1]
 hiddenimports += tmp[2]
 
-# torch — needed by Silero VAD (torch.hub)
-tmp = collect_all('torch')
-datas     += tmp[0]
-binaries  += tmp[1]
-hiddenimports += tmp[2]
+# torch is no longer needed since VAD runs via onnxruntime
+
 
 # tokenizers (Rust extension, needs special handling)
 tmp = collect_all('tokenizers')
@@ -89,8 +86,7 @@ hiddenimports += [
     'tokenizers',
     # soundcard WASAPI backend
     'soundcard.mediafoundation',
-    # Silero VAD via torch.hub
-    'torch.hub',
+    # Silero VAD no longer needs torch.hub
 ]
 
 # ── Analysis ──────────────────────────────────────────────────────────────────
@@ -108,10 +104,19 @@ a = Analysis(
         'matplotlib', 'pandas', 'scipy', 'sklearn',
         'cv2', 'IPython', 'jupyter',
         'test', 'unittest', 'pyaudio',
+        'torch', 'numba', 'pyarrow', 'lxml', 'grpc', 'nltk', 'pydantic', 'torchvision',
     ],
     noarchive=False,
     optimize=0,
 )
+
+# ── Filter out PyTorch / torchvision DLLs and other heavy dependencies ────────
+def is_excluded(path_str):
+    p = path_str.lower()
+    return any(k in p for k in ['torch', 'torchvision', 'cublas', 'cusolver', 'cufft', 'cusparse', 'mkl'])
+
+a.binaries = [x for x in a.binaries if not (is_excluded(x[0]) or is_excluded(x[1]))]
+a.datas = [x for x in a.datas if not (is_excluded(x[0]) or is_excluded(x[1]))]
 
 pyz = PYZ(a.pure)
 

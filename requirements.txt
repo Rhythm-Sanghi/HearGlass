@@ -15,9 +15,8 @@ numpy>=1.26.4
 # 1.2.1 uses av>=13 which has pre-built wheels for Python 3.13
 faster-whisper==1.2.1
 
-# Voice Activity Detection — Silero VAD (via torch.hub, downloaded on first run)
-# torchaudio is NOT required — faster-whisper's bundled VAD handles audio processing.
-torch>=2.6.0
+# Voice Activity Detection — Silero VAD (ONNX model, no PyTorch needed)
+# Loaded directly from faster-whisper's assets.
 
 # PyWin32 for click-through window manipulation and global hotkeys (Windows only)
 pywin32>=307

@@ -57,7 +57,11 @@ def _setup_logging() -> logging.Logger:
     fmt = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%H:%M:%S"
     )
-    log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.log")
+    if getattr(sys, "frozen", False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    log_path = os.path.join(base_dir, "app.log")
     # Rotating handler — keeps at most 3 × 5 MB = 15 MB of logs
     fh = logging.handlers.RotatingFileHandler(
         log_path, maxBytes=5 * 1024 * 1024, backupCount=2, encoding="utf-8"
