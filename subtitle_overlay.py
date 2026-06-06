@@ -43,6 +43,14 @@ _WINDOWS = sys.platform == "win32"
 if _WINDOWS:
     import ctypes
     import ctypes.wintypes
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)  # PROCESS_SYSTEM_DPI_AWARE
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 def _setup_logging() -> logging.Logger:
@@ -392,35 +400,191 @@ class DragHandle(tk.Frame):
 # Settings window
 # ─────────────────────────────────────────────────────────────────────────────
 
+_LANGUAGES_MAP: dict[str, str] = {
+    "auto": "Auto-Detect",
+    "en": "English",
+    "zh": "Chinese",
+    "de": "German",
+    "es": "Spanish",
+    "ru": "Russian",
+    "ko": "Korean",
+    "fr": "French",
+    "ja": "Japanese",
+    "pt": "Portuguese",
+    "tr": "Turkish",
+    "pl": "Polish",
+    "ca": "Catalan",
+    "nl": "Dutch",
+    "ar": "Arabic",
+    "sv": "Swedish",
+    "it": "Italian",
+    "id": "Indonesian",
+    "hi": "Hindi",
+    "fi": "Finnish",
+    "vi": "Vietnamese",
+    "he": "Hebrew",
+    "uk": "Ukrainian",
+    "el": "Greek",
+    "ms": "Malay",
+    "cs": "Czech",
+    "ro": "Romanian",
+    "da": "Danish",
+    "hu": "Hungarian",
+    "ta": "Tamil",
+    "no": "Norwegian",
+    "th": "Thai",
+    "ur": "Urdu",
+    "hr": "Croatian",
+    "bg": "Bulgarian",
+    "lt": "Lithuanian",
+    "la": "Latin",
+    "mi": "Maori",
+    "ml": "Malayalam",
+    "cy": "Welsh",
+    "sk": "Slovak",
+    "te": "Telugu",
+    "fa": "Persian",
+    "lv": "Latvian",
+    "bn": "Bengali",
+    "sr": "Serbian",
+    "az": "Azerbaijani",
+    "sl": "Slovenian",
+    "kn": "Kannada",
+    "et": "Estonian",
+    "mk": "Macedonian",
+    "br": "Breton",
+    "eu": "Basque",
+    "is": "Icelandic",
+    "hy": "Armenian",
+    "ne": "Nepali",
+    "mn": "Mongolian",
+    "bs": "Bosnian",
+    "kk": "Kazakh",
+    "sq": "Albanian",
+    "sw": "Swahili",
+    "gl": "Galician",
+    "mr": "Marathi",
+    "pa": "Punjabi",
+    "si": "Sinhala",
+    "km": "Khmer",
+    "sn": "Shona",
+    "yo": "Yoruba",
+    "so": "Somali",
+    "af": "Afrikaans",
+    "oc": "Occitan",
+    "ka": "Georgian",
+    "be": "Belarusian",
+    "tg": "Tajik",
+    "sd": "Sindhi",
+    "gu": "Gujarati",
+    "am": "Amharic",
+    "yi": "Yiddish",
+    "lo": "Lao",
+    "uz": "Uzbek",
+    "fo": "Faroese",
+    "ht": "Haitian Creole",
+    "ps": "Pashto",
+    "tk": "Turkmen",
+    "nn": "Nynorsk",
+    "mt": "Maltese",
+    "sa": "Sanskrit",
+    "lb": "Luxembourgish",
+    "my": "Myanmar",
+    "bo": "Tibetan",
+    "tl": "Tagalog",
+    "mg": "Malagasy",
+    "as": "Assamese",
+    "tt": "Tatar",
+    "haw": "Hawaiian",
+    "ln": "Lingala",
+    "ha": "Hausa",
+    "ba": "Bashkir",
+    "jw": "Javanese",
+    "su": "Sundanese",
+    "yue": "Cantonese",
+}
+
+# Pre-compiled list of friendly name strings for dropdown menu
+_LANG_OPTIONS: list[str] = ["Auto-Detect (auto)"] + sorted(
+    [f"{name} ({code})" for code, name in _LANGUAGES_MAP.items() if code != "auto"]
+)
+
+
 class SettingsWindow(tk.Toplevel):
     """Settings panel for device, model, language, compute device, and overlay width."""
 
-    def __init__(self, parent: "HearGlass") -> None:
+    def __init__(self, parent: HearGlass) -> None:
         super().__init__(parent)
         self._parent = parent
         self.title("HearGlass — Settings")
-        self.geometry("500x580")
-        self.resizable(False, False)
+        self.geometry("500x450")
+        self.resizable(True, True)
+        self.minsize(500, 400)
         self.configure(bg="#0f0f23")
         self.attributes("-topmost", True)
-        # Close callback: clear the parent's reference so it can be re-opened
+        # Intercept window close (both X button and cancel) to check for unsaved changes
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build_ui()
 
-    def _on_close(self) -> None:
+    def _close_window(self) -> None:
         self._parent._settings_win = None
         self.destroy()
 
+    def _has_changes(self) -> bool:
+        # device index
+        dev_str = self._device_var.get().strip()
+        try:
+            new_device = None if dev_str.lower() == "auto" else int(dev_str)
+        except ValueError:
+            new_device = self._parent._cfg.get("device_index")
+
+        # width
+        try:
+            new_width = int(self._width_var.get().strip())
+        except ValueError:
+            new_width = self._parent._cfg.get("overlay_width", 860)
+
+        # language code extraction from dropdown format (e.g. "French (fr)" -> "fr")
+        selected_display = self._lang_var.get().strip()
+        new_lang = selected_display.split("(")[-1].rstrip(")")
+
+        # model & compute device
+        new_model = self._model_var.get()
+        new_compute = self._compute_var.get()
+
+        return (
+            new_device != self._parent._cfg.get("device_index") or
+            new_width != self._parent._cfg.get("overlay_width") or
+            new_lang != self._parent._cfg.get("language") or
+            new_model != self._parent._cfg.get("model_name") or
+            new_compute != self._parent._cfg.get("compute_device")
+        )
+
+    def _on_close(self) -> None:
+        if self._has_changes():
+            ans = messagebox.askyesnocancel(
+                "Unsaved Changes",
+                "You have unsaved changes. Would you like to save and apply them?"
+            )
+            if ans is True:
+                self._apply()
+                return
+            elif ans is False:
+                pass  # Discard changes and close
+            else:
+                return  # Cancel close, return to window
+        self._close_window()
+
     def _build_ui(self) -> None:
-        pad      = {"padx": 16, "pady": 6}
-        label_kw = dict(bg="#0f0f23", fg="#ccccdd", font=(FONT_FAMILY, 10))
+        pad      = {"padx": 16, "pady": 4}
+        label_kw = dict(bg="#0f0f23", fg="#ccccdd", font=(FONT_FAMILY, 9, "bold"))
         entry_kw = dict(bg="#1a1a2e", fg="white", insertbackground="white",
-                        relief="flat", font=(FONT_FAMILY, 11), bd=8)
+                        relief="flat", font=(FONT_FAMILY, 10), bd=6)
 
         tk.Label(self, text="⚙  HearGlass Settings",
                  bg="#0f0f23", fg=HANDLE_ACCENT,
-                 font=(FONT_FAMILY, 13, "bold")).pack(**pad, fill="x")
-        tk.Frame(self, bg=HANDLE_ACCENT, height=1).pack(fill="x", padx=16)
+                 font=(FONT_FAMILY, 13, "bold")).pack(padx=16, pady=8, fill="x")
+        tk.Frame(self, bg=HANDLE_ACCENT, height=1).pack(fill="x", padx=16, pady=(0, 8))
 
         # ── Device index ──────────────────────────────────────────────────────
         tk.Label(self, text="Audio Device Index:", **label_kw).pack(**pad, anchor="w")
@@ -432,35 +596,64 @@ class SettingsWindow(tk.Toplevel):
         # ── Live device list (clickable) ──────────────────────────────────────
         self._build_device_list()
 
-        # ── Model ─────────────────────────────────────────────────────────────
-        tk.Label(self, text="Whisper Model:", **label_kw).pack(**pad, anchor="w")
+        # ── Row 1: Model & Language (Side-by-side) ───────────────────────────
+        row1_frame = tk.Frame(self, bg="#0f0f23")
+        row1_frame.pack(fill="x", padx=16, pady=4)
+
+        # Whisper Model selection
+        model_frame = tk.Frame(row1_frame, bg="#0f0f23")
+        model_frame.pack(side="left", expand=True, fill="x", padx=(0, 8))
+        tk.Label(model_frame, text="Whisper Model:", **label_kw).pack(anchor="w", pady=(0, 2))
         self._model_var = tk.StringVar(value=self._parent._cfg["model_name"])
-        model_menu = tk.OptionMenu(self, self._model_var,
-                                   "tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium")
+        model_menu = tk.OptionMenu(
+            model_frame, self._model_var,
+            "tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium"
+        )
         model_menu.configure(bg="#1a1a2e", fg="white", activebackground=HANDLE_ACCENT,
-                             font=(FONT_FAMILY, 11), relief="flat", highlightthickness=0)
+                             font=(FONT_FAMILY, 10), relief="flat", highlightthickness=0)
         model_menu["menu"].configure(bg="#1a1a2e", fg="white", font=(FONT_FAMILY, 10))
-        model_menu.pack(**pad, fill="x")
+        model_menu.pack(fill="x")
 
-        # ── Language ──────────────────────────────────────────────────────────
-        tk.Label(self, text="Language (BCP-47 code, e.g. 'en', 'fr', 'de', or 'auto'):",
-                 **label_kw).pack(**pad, anchor="w")
-        self._lang_var = tk.StringVar(value=self._parent._cfg["language"] or "auto")
-        tk.Entry(self, textvariable=self._lang_var, **entry_kw).pack(**pad, fill="x")
+        # Language dropdown OptionMenu
+        lang_frame = tk.Frame(row1_frame, bg="#0f0f23")
+        lang_frame.pack(side="left", expand=True, fill="x", padx=(8, 0))
+        tk.Label(lang_frame, text="Transcription Language:", **label_kw).pack(anchor="w", pady=(0, 2))
 
-        # ── Compute device ────────────────────────────────────────────────────
-        tk.Label(self, text="Compute Device:", **label_kw).pack(**pad, anchor="w")
+        # Determine active language display name from saved code
+        current_lang = self._parent._cfg.get("language") or "en"
+        display_str = "Auto-Detect (auto)"
+        if current_lang != "auto":
+            friendly_name = _LANGUAGES_MAP.get(current_lang, "English")
+            display_str = f"{friendly_name} ({current_lang})"
+
+        self._lang_var = tk.StringVar(value=display_str)
+        lang_menu = tk.OptionMenu(lang_frame, self._lang_var, *_LANG_OPTIONS)
+        lang_menu.configure(bg="#1a1a2e", fg="white", activebackground=HANDLE_ACCENT,
+                            font=(FONT_FAMILY, 10), relief="flat", highlightthickness=0)
+        lang_menu["menu"].configure(bg="#1a1a2e", fg="white", font=(FONT_FAMILY, 10))
+        lang_menu.pack(fill="x")
+
+        # ── Row 2: Compute Device & Overlay Width (Side-by-side) ──────────────
+        row2_frame = tk.Frame(self, bg="#0f0f23")
+        row2_frame.pack(fill="x", padx=16, pady=4)
+
+        # Compute Device selection
+        compute_frame = tk.Frame(row2_frame, bg="#0f0f23")
+        compute_frame.pack(side="left", expand=True, fill="x", padx=(0, 8))
+        tk.Label(compute_frame, text="Compute Device:", **label_kw).pack(anchor="w", pady=(0, 2))
         self._compute_var = tk.StringVar(value=self._parent._cfg["compute_device"])
-        compute_menu = tk.OptionMenu(self, self._compute_var, "auto", "cpu", "cuda")
+        compute_menu = tk.OptionMenu(compute_frame, self._compute_var, "auto", "cpu", "cuda")
         compute_menu.configure(bg="#1a1a2e", fg="white", activebackground=HANDLE_ACCENT,
-                               font=(FONT_FAMILY, 11), relief="flat", highlightthickness=0)
+                               font=(FONT_FAMILY, 10), relief="flat", highlightthickness=0)
         compute_menu["menu"].configure(bg="#1a1a2e", fg="white", font=(FONT_FAMILY, 10))
-        compute_menu.pack(**pad, fill="x")
+        compute_menu.pack(fill="x")
 
-        # ── Overlay width ─────────────────────────────────────────────────────
-        tk.Label(self, text="Overlay Width (px, 200–3840):", **label_kw).pack(**pad, anchor="w")
+        # Overlay Width selection
+        width_frame = tk.Frame(row2_frame, bg="#0f0f23")
+        width_frame.pack(side="left", expand=True, fill="x", padx=(8, 0))
+        tk.Label(width_frame, text="Overlay Width (px):", **label_kw).pack(anchor="w", pady=(0, 2))
         self._width_var = tk.StringVar(value=str(self._parent._cfg.get("overlay_width", 860)))
-        tk.Entry(self, textvariable=self._width_var, **entry_kw).pack(**pad, fill="x")
+        tk.Entry(width_frame, textvariable=self._width_var, **entry_kw).pack(fill="x")
 
         # ── Info ──────────────────────────────────────────────────────────────
         tk.Label(self,
@@ -468,7 +661,7 @@ class SettingsWindow(tk.Toplevel):
                       "Width change is applied immediately.",
                  bg="#0f0f23", fg="#666688",
                  font=(FONT_FAMILY, 9, "italic"),
-                 justify="left").pack(pady=2, padx=16, anchor="w")
+                 justify="left").pack(pady=6, padx=16, anchor="w")
 
         # ── Buttons ───────────────────────────────────────────────────────────
         btn_frame = tk.Frame(self, bg="#0f0f23")
@@ -498,7 +691,7 @@ class SettingsWindow(tk.Toplevel):
                  bg="#0f0f23", fg="#aaaacc",
                  font=(FONT_FAMILY, 8)).pack(anchor="w")
         lb = tk.Listbox(frame, bg="#0d0d1e", fg="#aaaacc", font=(FONT_FAMILY, 8),
-                        relief="flat", height=min(len(mics), 4),
+                        relief="flat", height=3,
                         selectbackground=HANDLE_ACCENT, highlightthickness=0)
         for idx, mic in enumerate(mics):
             lb.insert(tk.END, f"  {idx:>3}  {mic.name}")
@@ -530,8 +723,9 @@ class SettingsWindow(tk.Toplevel):
             messagebox.showerror("Invalid Input", "Overlay width must be 200–3840 px.")
             return
 
-        lang_str = self._lang_var.get().strip()
-        new_lang = "auto" if lang_str.lower() == "auto" else (lang_str or "en")
+        # Extract language code from the dropdown option value
+        selected_display = self._lang_var.get().strip()
+        new_lang = selected_display.split("(")[-1].rstrip(")")
 
         selected_model = self._model_var.get()
         if (new_lang.lower() == "auto" or new_lang.lower() != "en") and selected_model.endswith(".en"):
@@ -556,8 +750,9 @@ class SettingsWindow(tk.Toplevel):
         if new_width != old_width:
             self._parent.apply_width(new_width)
 
-        self._on_close()
+        self._close_window()
         self._parent.restart_engine()
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
