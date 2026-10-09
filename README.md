@@ -1,132 +1,73 @@
-# HearGlass — Real-Time Audio Subtitle Overlay 
+# HearGlass
 
-A transparent, always-on-top Windows desktop overlay that captures system audio (speakers/headphones) in real-time and displays auto-generated subtitles. Powered by **faster-whisper** (OpenAI's Whisper engine optimized via CTranslate2 int8 quantization) and Silero VAD.
+A Windows desktop overlay that transcribes system audio into subtitles. It
+captures speaker/headphone output through WASAPI loopback and runs
+faster-whisper locally, with Silero VAD for speech onset and an energy-based
+silence detector. faster-whisper uses OpenAI's Whisper models through CTranslate2.
 
----
+## Install
 
-## Key Features
+Download `HearGlass.exe` from the [v1.0.5 release](https://github.com/Rhythm-Sanghi/HearGlass/releases/tag/v1.0.5).
+On first use, the app downloads the selected Whisper and Silero models into a
+local cache. Later use requires those models to remain available.
 
-* **Zero Virtual Cables Needed:** Captures raw speaker audio natively via WASAPI Loopback. Works out-of-the-box on Windows 10/11.
-* **Fully Click-Through:** Subtitle area is completely click-through, allowing you to use it on top of games, videos, meetings, and browsers without blocking mouse interaction.
-* **Intelligent Double-VAD + AGC:**
-  * **Silero VAD** detects speech start (high sensitivity, zero false starts).
-  * **EnergyVAD** monitors mid-speech silence (lightweight, responsive).
-  * **Automatic Gain Control (AGC)** boosts quiet audio (up to 50×) for Whisper so it never misses whisper-quiet speech.
-* **Interactive Handle Bar:** A sleek, self-hiding top handle allows you to reposition the overlay. Right-click to access Settings, Copy Transcript, or Quit.
-* **Global Hotkeys:** 
-  * `Ctrl + Alt + C` copy the session's full accumulated transcript to your clipboard.
-  * `Ctrl + Alt + Q` exit the app immediately from anywhere.
-* **System Tray Integration:** Minimize the app to the system tray to keep your desktop clean.
-* **Optimized for CPU:** Pre-tuned for consumer laptops using greedy decoding, reduced worker contention, and single-pass VAD, making transcription fast and highly accurate even without a dedicated GPU.
+To run from source on Windows with Python 3.10–3.13:
 
----
-
-## Installation & Setup
-
-You can either run the app directly using a pre-compiled standalone executable or run it from source.
-
-### Option A: Download Pre-compiled Binary (No Python Required)
-1. Once a release tag has been pushed, you can download the latest pre-compiled `HearGlass.exe` from the Releases tab on the GitHub repository.
-2. Double-click to launch the executable.
-*(Note: On the first run, it will automatically download the Whisper base model ~140 MB and Silero VAD model ~1 MB to your local cache. This may take a moment depending on your internet connection.)*
-
----
-
-### Option B: Run from Source (Requires Python 3.10 – 3.13)
-
-#### 1. Clone & Set Up Environment
-```bash
+```powershell
 git clone https://github.com/Rhythm-Sanghi/HearGlass.git
 cd HearGlass
-python -m venv venv
-venv\Scripts\activate
-```
-
-#### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-#### 3. (Optional) Test via CLI First
-Verify your audio capture and Whisper engine in the terminal before starting the GUI:
-```bash
-python transcription_engine.py --model base.en
-```
-*Play some audio (e.g., a YouTube video or music). Transcriptions will start printing to the console.*
-
-#### 4. Launch the Overlay GUI
-```bash
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 python subtitle_overlay.py
 ```
 
----
+For a command-line capture/transcription check, run
+`python transcription_engine.py --model base.en` and play some speech.
 
-## Configuration & Customization
+## Use
 
-The overlay settings are automatically persisted inside `config.json` in the application directory. You can adjust:
-* **Audio Device Index:** Change the captured sound source (auto-detects default speaker by default).
-* **Whisper Model:**
-  * `tiny.en` — Extremely fast, low CPU usage, good accuracy.
-  * `base.en` — Great balance of speed and accuracy (default & recommended).
-  * `small.en` / `medium.en` — High accuracy, but slower on low-end CPUs.
-* **Language:** Set custom language codes (e.g. `en`, `fr`, `de`, `es`) or `auto` for real-time translation/detection.
-* **Compute Device:** `cpu` (default) or `cuda` (if you have an NVIDIA GPU).
-* **Overlay Width:** Set default width (200px – 3840px).
+The subtitle region lets clicks pass through. Use the handle to move the window
+and right-click it for settings, transcript copying or exit. The system tray
+also provides access to the application.
 
-Right-click the **`▓▓▓ SUBTITLES ▓▓▓`** handle bar at the top of the overlay to open the **Settings** window to adjust these parameters dynamically.
+- `Ctrl + Alt + C`: copy the accumulated session transcript.
+- `Ctrl + Alt + Q`: exit.
+- Settings: choose the audio device, model, language, compute device and width.
+  Values are saved in local `config.json`.
 
----
+`tiny.en` and `base.en` are English-only model choices. For another language,
+choose a multilingual Whisper model and the appropriate language setting.
+`auto` enables language detection for transcription; the current pipeline does
+not request translation into another language.
 
-## Architecture Pipeline
+## How transcription works
 
-```
-          System Audio (Speakers/Headphones)
-                          ↓
-     SilentCaptureContext (ghost-volume unmute workaround)
-                          ↓
-      soundcard WASAPI Loopback Stream (64ms chunks @ 16kHz)
-                          ↓
-      Automatic Gain Control (AGC) [up to 50x peak normalization]
-                          ↓
-      Dual Voice Activity Detection (VAD)
-        ├─ Speech Onset: Silero VAD (512-sample chunk-split)
-        └─ Speech Silence: EnergyVAD
-                          ↓ (Speech segments only, AGC-boosted)
-      3.0-second Audio Segment Buffer → Queue
-                          ↓
-      faster-whisper (quantized int8/float16, beam_size=1, vad_filter=False)
-                          ↓
-      Whisper Hallucination & Punctuation Filter
-                          ↓
-      Tkinter Overlay Canvas (transparent, outline-drawn text)
-```
+Captured audio is gain-adjusted, segmented by speech/silence detectors and queued
+for faster-whisper. The CPU setup uses quantization and greedy decoding. A text
+filter removes some common repeated model outputs before rendering subtitles.
 
----
-
-## Global Shortcuts
-
-* **`Ctrl + Alt + C`**: Copy all accumulated transcript text from the current session directly to the clipboard.
-* **`Ctrl + Alt + Q`**: Stop the transcription engine, release audio hooks, and exit.
-
----
-
-## Packaging Your Own Executable
-
-If you modify the source code and want to compile a new `.exe`, run:
-```bash
-pip install pyinstaller
-pyinstaller HearGlass.spec --noconfirm
-```
-The compiled binary will be placed inside `dist\HearGlass.exe`.
-
----
+Gain control can amplify quiet speech and noise. VAD can miss speech or trigger
+on non-speech, and Whisper can produce incorrect words. Latency and accuracy
+depend on the audio, model and hardware; no zero-error or device-independent
+performance guarantee is made. This transcript should be checked against the
+audio where accuracy matters.
 
 ## Troubleshooting
 
-| Issue | Cause | Solution |
-|---|---|---|
-| **Subtitles are delayed** | CPU bottleneck / large model | 1. Open Settings and switch to the `tiny.en` model.<br>2. If you have an NVIDIA GPU, set compute device to `cuda`. |
-| **No transcription / Red Dot** | Device mismatch or engine startup crash | Right-click the handle bar → **Settings** and click to select your active audio device from the list of available devices. |
-| **Can't drag or click handle bar** | Entire window click-through | Fixed. The application now uses colorkey transparency (`TRANSPARENT_COLOR`) to make background transparent while keeping the handle bar clickable. |
-| **Sound is muted but capture fails** | Windows zeroes muted loopback streams | The app automatically uses a ghost-volume context manager (`pycaw`) to keep a 10% silent output stream alive. If it fails, unmute your speakers slightly. |
-| **Whisper hallucinating sentences** | Silence noise triggering model | The hallucination filter automatically filters out standard Whisper loops (e.g., *"Thank you for watching"*). Adjust VAD thresholds in `transcription_engine.py` if needed. |
+| Issue | Try |
+|---|---|
+| Delayed subtitles | Use a smaller model; compatible CUDA hardware is optional. |
+| No transcription | Check the selected loopback device and engine error output. |
+| Muted audio is not captured | The silent-capture workaround may not work for every device; try unmuting slightly. |
+| Repeated or incorrect text | Check audio quality and VAD thresholds; the text filter cannot catch every error. |
+
+## Build an executable
+
+```powershell
+python -m pip install pyinstaller
+pyinstaller HearGlass.spec --noconfirm
+```
+
+The output is `dist\HearGlass.exe`. Keep generated executables and local model
+caches out of source control. See [LICENSE](LICENSE) for the application license.
