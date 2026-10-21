@@ -11,7 +11,7 @@ A transparent, always-on-top Windows desktop overlay that captures system audio 
 * **Intelligent Double-VAD + AGC:**
   * **Silero VAD** detects speech start (high sensitivity, zero false starts).
   * **EnergyVAD** monitors mid-speech silence (lightweight, responsive).
-  * **Automatic Gain Control (AGC)** boosts quiet audio (up to 40×) for Whisper so it never misses whisper-quiet speech.
+  * **Automatic Gain Control (AGC)** boosts quiet audio (up to 50×) for Whisper so it never misses whisper-quiet speech.
 * **Interactive Handle Bar:** A sleek, self-hiding top handle allows you to reposition the overlay. Right-click to access Settings, Copy Transcript, or Quit.
 * **Global Hotkeys:** 
   * `Ctrl + Alt + C` copy the session's full accumulated transcript to your clipboard.
